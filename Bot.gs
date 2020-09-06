@@ -13,7 +13,6 @@ var Bot = function(token, logSheet){
                         "/list displays all the reminders in the current chat.\n" +
                         "/delete deletes a reminder.\n\n\n" + 
                         "Note that all reminders set on this bot can be accessed by the user hosting this bot. Do not set any reminders that contain any sort of private information.";
-                        //"/setspam set chat reminders to repeat every 5 seconds until acknowledged, default False.";
     this.sendMessage(data.message.chat.id, reply_string);
   }
   
@@ -35,12 +34,14 @@ var Bot = function(token, logSheet){
       var date = filteredRows[i][7];
       var time = filteredRows[i][8];
       var reminderText = filteredRows[i][9];
-//      this.sendMessage(chatID, "id=" + reminderID + "| \t" + frequency + " " + date + " " + time + ": " + reminderText + "\n" +
-//                      '------------------------------------------------------\n'  );
-      reply_string += "<b>id=" + reminderID + "</b> | \t" + frequency + " " + date + " " + time + ": " + reminderText + "\n" +
+      if (filteredRows[i][10]){
+        reply_string += "<b>id=" + reminderID + "</b>|&#128444; " + frequency + " " + date + " " + time + ": " + reminderText + "\n" +
+                      '------------------------------------------------------\n';   
+      }else{
+        reply_string += "<b>id=" + reminderID + "</b> | \t" + frequency + " " + date + " " + time + ": " + reminderText + "\n" +
                       '------------------------------------------------------\n';    
+      }
     }
-//    this.sendMessage(chatID, reply_string);
     reply_string += "To delete a reminder, type /delete &lt;id&gt;"
     this.sendMessage(chatID, reply_string);
   }
@@ -71,9 +72,15 @@ var Bot = function(token, logSheet){
     // get reminder text and frequency 
     var Utils = new Util();
     var reminderDate, reminderMessage, frequency;
+    var text, fileID;
+    if(!data.message.text){
+      text = data.message.caption;
+      fileID = data.message.photo.slice(-1)[0].file_id;
+    }else{
+      text = data.message.text;
+    }
     
-    [reminderDate, reminderMessage, frequency] = Utils.formatReminderInput(data.message.text);
-//    this.sendMessage(data.message.chat.id, reminderDate);
+    [reminderDate, reminderMessage, frequency] = Utils.formatReminderInput(text);
     if(reminderDate.getTime() - new Date().getTime() < 0){
       this.sendMessage(data.message.chat.id, "Reminder cannot be set in the past. Type /remind for more information");
       return;
@@ -84,16 +91,14 @@ var Bot = function(token, logSheet){
     var chatID = data.message.chat.id;
     var formattedDate = Utilities.formatDate(new Date(), "GMT+8", "yyyy/MM/dd HH:mm:ss");
     
-    var date = data.message.text.split(" ")[2];
-    var time = data.message.text.split(" ")[3];
+    var date = text.split(" ")[2];
+    var time = text.split(" ")[3];
     
     var reminderID = parseInt(this.logSheet.getRange(this.logSheet.getLastRow(), 6).getValue()) + 1;
     if(isNaN(reminderID)){
       reminderID = 1;
     }
-    
-    var date = data.message.text.split(" ")[2];
-    var time = data.message.text.split(" ")[3];
+
     var reply_string = ["Reminder set for", frequency, date, time, "with message:", reminderMessage].join(" ");
     try{
       this.sendMessage(chatID, reply_string);
@@ -111,11 +116,32 @@ See more information at https://core.telegram.org/bots/api#html-style`
     var newTrigger = ScriptApp.newTrigger("createReminderTrigger").timeBased().after(reminderDate.getTime() - new Date().getTime()).create();
     var triggerID = String(newTrigger.getUniqueId());
 
-    var rowData = [formattedDate, messageID, chatID, fromID, triggerID, reminderID, frequency, date, time, reminderMessage];
+    var rowData;
+    if(!data.message.text){
+      rowData = [formattedDate, messageID, chatID, fromID, triggerID, reminderID, frequency, date, time, reminderMessage, fileID];
+    }else{
+      rowData = [formattedDate, messageID, chatID, fromID, triggerID, reminderID, frequency, date, time, reminderMessage];
+    }
     this.logSheet.appendRow(rowData);
     
   }
   
+  this.sendPhoto = function(chatID, file_id, message){
+    var reply = {
+      'chat_id': chatID,
+      'caption': message,
+      'photo': file_id,
+      'parse_mode': 'HTML',
+      'disable_web_page_preview': true,
+    };
+    var method = 'sendPhoto';
+    var options = {
+      'method' : 'post',
+      'contentType': 'application/json',
+      'payload' : JSON.stringify(reply)
+    };
+    var response = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/' + method, options);      
+  }
   this.sendRawMessage = function(chatID, message){
     var reply = {
       'chat_id': chatID,
@@ -202,7 +228,12 @@ function createReminderTrigger(event){
       var frequency = filteredRows[0][6];
       var reminderText = filteredRows[0][9];
       var chatID = filteredRows[0][2];
-      bot.sendMessage(chatID, reminderText);
+      if(filteredRows[0][10]){
+        var fileID = filteredRows[0][10];
+        bot.sendPhoto(chatID, fileID, reminderText);
+      }else{
+        bot.sendMessage(chatID, reminderText);
+      }
       if(frequency == 'once'){
         bot.logSheet.deleteRow(rowNum);
       }else if(frequency == 'every'){

@@ -21,7 +21,13 @@ function doPost(e){
   var bot = new Bot(token, logSheet);
   var data = JSON.parse(e.postData.contents);
   if(data.message){
-    var text = data.message.text;
+    var text;
+    if(!data.message.text){
+      text = data.message.caption;
+    }else{
+      text = data.message.text;
+    }
+    
     if(text == "/start" || text == "/help"){
       bot.start(data);
     }else if(text == '/remind'){

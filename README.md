@@ -60,6 +60,12 @@ Accepted frequencies are:
 Users can also type "/remind" to the bot for the reminder syntax:
 ![remind syntax](images/remind.PNG)
 
+### Reminder with images
+
+The bot can send reminders along with an image if you send the reminder message along with an attached image.
+
+![reminder with image](images/image_reminder.PNG)
+
 ### Reminder Text Formatting
 
 The reminder text is parsed in html format, so the following special characters that would have to be escapped to be valid:
@@ -77,6 +83,8 @@ See more information at https://core.telegram.org/bots/api#html-style
 The bot keeps a list of reminders for each unique chat that it has access to.
 Type "/remind" to list all reminders for the specific chat.
 Each reminder contains their specific reminder id, frequency, time, and the reminder message.
+
+Reminders with images attached will have a &#128444; icon beside the id number as well.
 
 ![list of reminders](images/list.PNG)
 
@@ -116,7 +124,4 @@ Steps to host on Google App Scripts:
 4. Replace the token, webapp url and ssId variable with your own ones
 5. Run the setWebHook() function to set the bot web hook to your webApp URL
 6. Deploy the code as a web app
-
-
-
 
