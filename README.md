@@ -2,7 +2,7 @@
 
 This telegram bot is written and hosted on [Google App Script](https://www.script.google.com). The reminders are written as a time based trigger on google app script.
 
-The bot works in both personal chats, as well as group chats.
+The bot works in both personal chats as well as group chats.
 
 Note that all reminders can be seen by the person implementing the reminder bot. Do not store any reminders that contain any sort of private information. The only secure way to store private reminders is to host your own reminder bot on Google AppScript.
 
